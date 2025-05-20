@@ -1,6 +1,6 @@
 # Leiningen
 
-[![status-badge](https://ci.codeberg.org/api/badges/leiningen/leiningen/status.svg)](https://ci.codeberg.org/leiningen/leiningen)
+[![status-badge](https://builds.sr.ht/~sircmpwn/leiningen.svg)](https://builds.sr.ht/~technomancy/leiningen)
 
 <img src="https://leiningen.org/img/leiningen.jpg"
  alt="Leiningen logo" title="The man himself" align="right" />

@@ -3,6 +3,5 @@
     "image": "debian/stable",
     "packages": ["gnupg", "leiningen", "openssh-client"],
     "sources": ["https://codeberg.org/leiningen/leiningen"],
-    "tasks": ["cd leiningen/leiningen-core && lein bootstrap",
-              "cd leiningen && bin/lein test"],
+    "tasks": [{"build": "cd leiningen/leiningen-core && lein bootstrap && cd .. && bin/lein test"}],
 }

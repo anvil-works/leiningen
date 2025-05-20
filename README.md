@@ -1,6 +1,6 @@
 # Leiningen
 
-[![status-badge](https://builds.sr.ht/~sircmpwn/leiningen.svg)](https://builds.sr.ht/~technomancy/leiningen)
+[![builds.sr.ht status](https://builds.sr.ht/~technomancy/leiningen.svg)](https://builds.sr.ht/~technomancy/leiningen?)
 
 <img src="https://leiningen.org/img/leiningen.jpg"
  alt="Leiningen logo" title="The man himself" align="right" />

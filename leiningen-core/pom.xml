@@ -15,7 +15,10 @@
     </license>
   </licenses>
   <scm>
-    <tag>c26c0a144a37aeaa112919bf561e77afd5a895f6</tag>
+    <url>https://github.com/technomancy/leiningen</url>
+    <connection>scm:git:git://github.com/technomancy/leiningen.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/technomancy/leiningen.git</developerConnection>
+    <tag>24fb93936133bd7fc30c393c127e9e69bb5f2392</tag>
   </scm>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -63,7 +66,7 @@
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.11.1</version>
+      <version>1.11.4</version>
     </dependency>
     <dependency>
       <groupId>timofreiberg</groupId>

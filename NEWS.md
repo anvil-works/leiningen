@@ -3,6 +3,9 @@
 ## 2.11.3 / ???
 
 * Add `:plugin-tree-data` subcommand to deps task. (Gabriel Giussi)
+* Fix a bug in `:active-profiles` in middleware plugins. (Rob Browning)
+* Update to nREPL 1.3.0 (oyakushev)
+* Update to Clojure 1.11.4 (Justin Polchlopek)
 
 ## 2.11.2 / 2024-02-13
 

@@ -59,7 +59,6 @@
   "workflows": {
     "test-with-matrix": {
       "jobs": [
-        {"build": {"name": "openjdk8",  "java_version": "openjdk-8"}},
         {"build": {"name": "openjdk17", "java_version": "openjdk-17"}},
         {"build": {"name": "openjdk21", "java_version": "openjdk-21"}}
       ]

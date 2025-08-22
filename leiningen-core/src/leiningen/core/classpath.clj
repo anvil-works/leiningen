@@ -338,7 +338,7 @@
                       (get-dependencies-memoized dependencies-key
                                                  managed-dependencies-key
                                                  trimmed (apply hash-map args)))]
-    (pedantic/do (:pedantic? project) @ranges @overrides)
+    (pedantic/warn-or-abort (:pedantic? project) @ranges @overrides)
     deps-result))
 
 (defn- get-original-dependency

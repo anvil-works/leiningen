@@ -21,7 +21,6 @@
   * `Artifact`
   * `Version`
   * `VersionConstraint`"
-  (:refer-clojure :exclude [do])
   (:require [cemerick.pomegranate.aether :as aether]
             [clojure.set :as set])
   (:import (java.util Map)
@@ -34,8 +33,6 @@
                                      Exclusion)
            (org.eclipse.aether.util.graph.transformer ConflictIdSorter
                                                       TransformationContextKeys)))
-
-(set! *warn-on-reflection* true)
 
 (defn- warn [& args]
   ;; TODO: remove me once #1227 is merged
@@ -69,10 +66,21 @@
            (some? lb)
            (not (.equals lb ub))))))
 
-(defn- set-ranges!
-  "Set ranges to contain all paths that asks for a version range"
-  [ranges paths]
-  (reset! ranges (doall (filter range? paths))))
+(defn- group-artifact [^Artifact artifact]
+  (if (= (.getGroupId artifact)
+         (.getArtifactId artifact))
+    (.getGroupId artifact)
+    (str (.getGroupId artifact)
+         "/"
+         (.getArtifactId artifact))))
+
+(defn- paths->ranges
+  "Get a list of range nodes from the full list of paths."
+  [paths]
+  (let [by-artifact (group-by #(group-artifact (.getArtifact (:node %)))
+                              (filter range? paths))]
+    (for [[_ elements] by-artifact]
+      (last (sort-by #(.getVersion (:node %)) elements)))))
 
 (defn- node<
   "Is the version of node1 < version of node2."
@@ -140,15 +148,15 @@
   "Examine the tree with root `node` for version ranges, then
   allow the original `transformer` to perform resolution, then check for
   overriden dependencies."
-  [ranges overrides node
+  [ranges overrides root-node
    ^DependencyGraphTransformationContext context
    ^DependencyGraphTransformer transformer]
   ;; Force initialization of the context like NearestVersionConflictResolver
-  (initialize-conflict-ids! node context)
+  (initialize-conflict-ids! root-node context)
   ;; Get all the paths of the graph before dependency resolution
-  (let [potential-paths (all-paths node)]
-    (set-ranges! ranges potential-paths)
-    (.transformGraph transformer node context)
+  (let [potential-paths (all-paths root-node)]
+    (reset! ranges (paths->ranges potential-paths))
+    (.transformGraph transformer root-node context)
     ;; The original transformer should have done dependency resolution,
     ;; so now we can gather just the accepted paths and use the ConflictId
     ;; to match against the potential paths
@@ -161,7 +169,7 @@
                             (remove range? potential-paths))]
       (set-overrides! overrides
                       #(->> % (.get node->id) id->paths)
-                      (all-paths node)
+                      (all-paths root-node)
                       @ranges))))
 
 (defn- use-transformer
@@ -183,28 +191,19 @@
     (.setDependencyGraphTransformer
      session
      (reify DependencyGraphTransformer
-       (transformGraph [_ node context]
+       (transformGraph [_ root-node context]
          (try
-           (transform-graph ranges overrides node context transformer)
+           (transform-graph ranges overrides root-node context transformer)
            (catch java.lang.OutOfMemoryError _
              (warn "Pathological dependency tree detected.")
              (warn "Consider setting :pedantic? false in project.clj to bypass.")))
-         ;;Return the DependencyNode in order to meet
-         ;;transformGraph's contract
-         node)))))
+         ;; Return the root in order to meet transformGraph's contract
+         root-node)))))
 
 (defn ^:internal session [project ranges overrides]
   (if (:pedantic? project)
     #(-> % aether/repository-session
          (use-transformer ranges overrides))))
-
-(defn- group-artifact [^Artifact artifact]
-  (if (= (.getGroupId artifact)
-         (.getArtifactId artifact))
-    (.getGroupId artifact)
-    (str (.getGroupId artifact)
-         "/"
-         (.getArtifactId artifact))))
 
 (defn- exclusion-group-artifact [^Exclusion exclusion]
   (if (= (.getGroupId exclusion)
@@ -241,30 +240,23 @@
 (defn- message-for-version [{:keys [node parents]}]
   (message-for (conj parents node)))
 
-(defn- exclusion-for-range [^DependencyNode node parents]
-  (if-let [^DependencyNode top-level (second parents)]
-    (let [excluded-artifact (.getArtifact (.getDependency node))
-          exclusion (Exclusion. (.getGroupId excluded-artifact)
-                      (.getArtifactId excluded-artifact) "*" "*")
-          exclusion-set (into #{exclusion} (.getExclusions
-                                             (.getDependency top-level)))
-          with-exclusion (.setExclusions (.getDependency top-level) exclusion-set)]
-      (dependency-str with-exclusion))
-    ""))
+(defn- managed-for-range [^DependencyNode node parents]
+  (dependency-str (.getDependency node)
+                  (-> node .getDependency .getArtifact .getVersion)))
 
 (defn- message-for-range [{:keys [node parents]}]
   (str (message-for (conj parents node) :constraints) "\n"
-       "Consider using "
-       (exclusion-for-range node parents) "."))
+       "Consider adding to :managed-dependencies: "
+       (managed-for-range node parents)))
 
-(defn- exclusion-for-override [{:keys [node parents]}]
-  (exclusion-for-range node parents))
+(defn- managed-for-override [{:keys [node parents]}]
+  (managed-for-range node parents))
 
 (defn- message-for-override [{:keys [accepted ignoreds ranges]}]
   {:accepted (message-for-version accepted)
    :ignoreds (map message-for-version ignoreds)
    :ranges (map message-for-range ranges)
-   :exclusions (map exclusion-for-override ignoreds)})
+   :managed (map managed-for-override ignoreds)})
 
 (defn- pedantic-print-ranges [messages]
   (when-not (empty? messages)
@@ -276,7 +268,7 @@
 (defn- pedantic-print-overrides [messages]
   (when-not (empty? messages)
     (warn "Possibly confusing dependencies found:")
-    (doseq [{:keys [accepted ignoreds ranges exclusions]} messages]
+    (doseq [{:keys [accepted ignoreds ranges managed]} messages]
       (warn accepted)
       (warn " overrides")
       (doseq [ignored (interpose " and" ignoreds)]
@@ -285,22 +277,22 @@
         (warn " possibly due to a version range in")
         (doseq [r ranges]
           (warn r)))
-      (warn "\nConsider using these exclusions:")
-      (doseq [ex (distinct exclusions)]
+      (warn "\nConsider using these :managed-dependencies: ")
+      (doseq [ex (distinct managed)]
         (warn ex))
       (warn))))
 
 (alter-var-root #'pedantic-print-ranges memoize)
 (alter-var-root #'pedantic-print-overrides memoize)
 
-(defn ^:internal do [pedantic-setting ranges overrides]
+(defn warn-or-abort [pedantic-setting ranges overrides]
   ;; Need to turn everything into a string before calling
   ;; pedantic-print-*, otherwise we can't memoize due to bad equality
   ;; semantics on aether GraphEdge objects.
   (let [key (keyword pedantic-setting)
         abort-or-true (#{true :abort} key)]
     (when (and key (not= key :overrides))
-      (pedantic-print-ranges (distinct (map message-for-range ranges))))
+      (pedantic-print-ranges (map message-for-range ranges)))
     (when (and key (not= key :ranges))
       (pedantic-print-overrides (map message-for-override overrides)))
     (when (and abort-or-true

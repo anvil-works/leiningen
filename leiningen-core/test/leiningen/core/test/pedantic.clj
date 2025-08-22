@@ -6,19 +6,16 @@
             [cemerick.pomegranate.aether :as aether])
   (:import (org.eclipse.aether.graph DependencyNode)))
 
-(def tmp-dir (io/file
-              (System/getProperty "java.io.tmpdir") "pedantic"))
+(def tmp-dir (io/file (System/getProperty "java.io.tmpdir") "pedantic"))
 (def tmp-local-repo-dir (io/file tmp-dir "local-repo"))
 
-(defn delete-recursive
-  [dir]
+(defn delete-recursive [dir]
   (when (.isDirectory dir)
     (doseq [file (.listFiles dir)]
       (delete-recursive file)))
     (.delete dir))
 
-(defn clear-tmp
-  [f]
+(defn clear-tmp [f]
   (delete-recursive (io/file tmp-dir)) (f))
 
 (defn get-versions [name repo]
@@ -27,7 +24,9 @@
 
 (defn make-pom-string [name version deps]
   (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-  <project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">
+  <project xmlns=\"http://maven.apache.org/POM/4.0.0\"
+           xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+           xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">
   <modelVersion>4.0.0</modelVersion>
   <groupId>" name "</groupId>
   <artifactId>" name "</artifactId>
@@ -93,28 +92,21 @@
 (defn resolve-deps [ranges overrides coords]
   (aether/resolve-dependencies
    :coordinates coords
-   :repositories {"test-repo" {:url "fake://ss"
-                               :checksum :warn}}
+   :repositories {"test-repo" {:url "fake://ss" :checksum :warn}}
    :local-repo tmp-local-repo-dir
-   :repository-session-fn
-   #(-> %
-        aether/repository-session
-        (#'pedantic/use-transformer ranges overrides))))
+   :repository-session-fn (pedantic/session {:pedantic? true} ranges overrides)))
 
 (defmulti translate type)
 
 (defmethod translate :default [x] x)
 
-(defmethod translate java.util.List
-  [l]
+(defmethod translate java.util.List [l]
   (vec (remove nil? (map translate l))))
 
-(defmethod translate java.util.Map
-  [m]
+(defmethod translate java.util.Map [m]
   (into {} (map (fn [[k v]] [k (translate v)]) m)))
 
-(defn- node->artifact-map
-  [^DependencyNode node]
+(defn- node->artifact-map [^DependencyNode node]
   (if-let [d (.getDependency node)]
     (if-let [a (.getArtifact d)]
       (let [b (bean a)]
@@ -123,8 +115,7 @@
                           :version :extension :properties])
             (update-in [:exclusions] vec))))))
 
-(defmethod translate DependencyNode
-  [n]
+(defmethod translate DependencyNode [n]
   (if-let [a (node->artifact-map n)]
     [(if (= (:groupId a) (:artifactId a))
        (symbol (:artifactId a))
@@ -158,9 +149,7 @@
   (let [ranges (atom [])
         overrides (atom [])]
     (resolve-deps ranges overrides '[[range "1"]])
-    (is (= (translate @ranges) '[{:node [a "1"]
-                                  :parents [[range "1"]]}
-                                 {:node [a "2"]
+    (is (= (translate @ranges) '[{:node [a "2"]
                                   :parents [[range "1"]]}]))
     (is (= @overrides []))))
 

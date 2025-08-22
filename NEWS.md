@@ -2,6 +2,7 @@
 
 ## 2.11.3 / ???
 
+* Use `:managed-dependencies` instead of `:exclusions` for version ranges. (Phil Hagelberg)
 * Add `:plugin-tree-data` subcommand to deps task. (Gabriel Giussi)
 * Fix a bug in `:active-profiles` in middleware plugins. (Rob Browning)
 * Update to nREPL 1.3.0 (oyakushev)

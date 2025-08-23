@@ -3,9 +3,9 @@
 The Leiningen project is in the process of [moving off
 Github](https://sfconservancy.org/GiveUpGitHub/).
 
-This repository will continue to be updated as a mirror for a while as
-we work to complete the move, but please switch your git remotes over
-to https://codeberg.org/leiningen/leiningen
+This repository will continue to be sporadically updated as a mirror
+for a while as we work to complete the move, but please switch your
+git remotes over to https://codeberg.org/leiningen/leiningen
 
 Codeberg works just like Github, and you can even use your Github
 account to log in there, but it is operated like a user-owned
@@ -14,6 +14,10 @@ instead of being an extractive arm of an unaccountable abusive megacorp.
 
 As usual, you can join the `#leiningen` IRC channel on
 [Libera.Chat](https://libera.chat) to discuss issues.
+
+Any use of this project's code by Github Copilot, past or present, is done
+without our permission. We do not consent to Github's use of this project's
+code in training Copilot or any other language model.
 
 ## For your consideration
 
@@ -24,7 +28,7 @@ idea when that company has a history of abusing their monopoly.
 If you haven't taken a look at Github alternatives, now's a great time
 to evaluate a new home for your project! If you took a look at Gitlab
 a few years ago and were put off by its clunkiness and bugs, you
-should know that much better alternatives are available now.
+should know that there are much better alternatives now.
 
 [Codeberg](https://codeberg.org/) is perhaps the most polished
 alternative, but [Sourcehut](https://git.sr.ht/) is also quite nice

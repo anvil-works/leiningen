@@ -63,8 +63,8 @@ enough as they needed access to values in the project map. For
 instance, a test runner would need to know the value of `:test-paths`
 to know which directory to scan for tests.
 
-As of Leiningen 2.4.0 it's possible to get this data from an alias,
-removing the need for a plugin.
+It's possible to get this data from an alias, removing the need for a
+plugin.
 
     :aliases {"mytest" ["run" "-m" "mylib.test/go" :project/test-paths]}
 
@@ -464,9 +464,9 @@ middleware.
 
 ## Clojure Version
 
-Leiningen 2.7.0 and on uses Clojure 1.8.0. If you need to use a
-different version of Clojure from within a Leiningen plugin, you can
-use `eval-in-project` with a dummy project argument:
+If you need to use a specific, fixed version of Clojure from within a
+Leiningen plugin, you can use `eval-in-project` with a dummy project
+argument:
 
 ```clj
 (eval-in-project {:dependencies '[[org.clojure/clojure "1.4.0"]]}
@@ -493,13 +493,11 @@ you should still leave room in the arguments list for a project map;
 just expect that it will be nil if there's no project present. Use
 `^:no-project-needed` metadata to indicate this is acceptable.
 
-In Leiningen 1.x, having a task function return a numeric value was a
-way to signal the process's exit code. In Leiningen 2.x, tasks should
-call the `leiningen.core.main/abort` function when a fatal error is
-encountered. If the `leiningen.core.main/*exit-process?*` var is bound
-to true, then this will trigger an exit, but in some contexts (like
-`with-profiles`) it will simply trigger an exception and go on to the
-next task.
+Tasks should call the `leiningen.core.main/abort` function when a
+fatal error is encountered. If the
+`leiningen.core.main/*exit-process?*` var is bound to true, then this
+will trigger an exit, but in some contexts (like `with-profiles`) it
+will simply trigger an exception and go on to the next task.
 
 ## Overriding Built-in Tasks
 

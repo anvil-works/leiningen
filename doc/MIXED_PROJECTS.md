@@ -79,8 +79,6 @@ sources use features up to JDK 6 and target JVM is also version 6:
   :javac-options     ["-target" "1.6" "-source" "1.6"])
 ```
 
-Leiningen 2 and later versions uses the [JDK compiler API](https://docs.oracle.com/javase/7/docs/technotes/guides/javac/index.html) to compile Java sources.
-
 Failing to specify the target version will lead JDK compiler to target whatever JDK
 Leiningen is running on. It is a good practice to explicitly specify target JVM
 version in mixed Clojure/Java projects.

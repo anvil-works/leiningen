@@ -19,8 +19,8 @@
   - [Troubleshooting](#troubleshooting)
     - [Debian based distributions](#debian-based-distributions-1)
       - [gpg: can't query passphrase in batch mode](#gpg-cant-query-passphrase-in-batch-mode)
-    - [Mac OSX](#mac-osx)
-      - [Unable to get GPG installed via Homebrew and OSX Keychain to work](#unable-to-get-gpg-installed-via-homebrew-and-osx-keychain-to-work)
+    - [Mac OS](#mac-os)
+      - [Unable to get GPG installed via Homebrew and OS Keychain to work](#unable-to-get-gpg-installed-via-homebrew-and-osx-keychain-to-work)
       - [GPG doesn't ask for a passphrase](#gpg-doesnt-ask-for-a-passphrase)
     - [GPG prompts for passphrase but does not work with Leiningen](#gpg-prompts-for-passphrase-but-does-not-work-with-leiningen)
 
@@ -269,9 +269,9 @@ You can test whether this solution works with
 
 If the system asked your passphrase then problem solved.
 
-### Mac OSX
+### Mac OS
 
-#### Unable to get GPG installed via Homebrew and OSX Keychain to work
+#### Unable to get GPG installed via Homebrew and OS Keychain to work
 
 Installing GPG from here instead: https://www.gpgtools.org/installer/index.html
 

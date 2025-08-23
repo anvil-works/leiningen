@@ -63,12 +63,6 @@ tool.
 This tutorial will briefly cover project structure, dependency
 management, running tests, the REPL, and topics related to deployment.
 
-or [Maven](https://maven.apache.org/) in anger: don't panic. Leiningen is designed
-For those of you new to the JVM who have never touched [Ant](https://ant.apache.org/)
-with you in mind. This tutorial will help you get started and explain Leiningen's
-take on project automation and JVM-land dependency management.
-
-
 ## Getting Help
 
 Also keep in mind that Leiningen ships with fairly comprehensive help;
@@ -167,7 +161,7 @@ Your `project.clj` file will start off looking something like this:
   :url "https://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "https://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.8.0"]]
+  :dependencies [[org.clojure/clojure "1.11.4"]]
   :main ^:skip-aot my-stuff.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
@@ -202,17 +196,16 @@ its web interface or via `lein search $TERM`. On the Clojars page for
 `clj-http` at the time of this writing it shows this:
 
 ```clj
-[clj-http "2.0.0"]
+[clj-http "3.13.1"]
 ```
 
-It also shows the Maven and Gradle syntax for dependencies. You can copy the
-Leiningen version directly into the `:dependencies` vector in
-`project.clj`.  So for instance, if you change the `:dependencies`
-line in the example `project.clj` above to
+You can copy the Leiningen version directly into the `:dependencies`
+vector in `project.clj`.  So for instance, if you change the
+`:dependencies` line in the example `project.clj` above to
 
 ```clj
 :dependencies [[org.clojure/clojure "1.8.0"]
-               [clj-http "2.0.0"]]
+               [clj-http "3.13.1"]]
 ```
 
 Leiningen will automatically download the `clj-http` jar file and make sure
@@ -258,7 +251,7 @@ and `:import` clauses.
 ### Repositories
 
 Dependencies are stored in *artifact repositories*. If you are
-familiar with Perl's CPAN, Python's Cheeseshop (aka PyPi), Ruby's
+familiar with Perl's CPAN, Python's PyPi, Ruby's
 rubygems.org, or Node.js's NPM, it's the same thing. Leiningen reuses
 existing JVM repository infrastructure. There are several popular
 open source repositories. Leiningen by default will use two of them:
@@ -576,7 +569,7 @@ should look like this:
   :license {:name "Eclipse Public License"
             :url "https://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [clj-http "2.0.0"]]
+                 [clj-http "3.13.1"]]
   :profiles {:dev {:dependencies [[ring/ring-devel "1.4.0"]]}}
   :main my-stuff.core
   :aot [my-stuff.core])

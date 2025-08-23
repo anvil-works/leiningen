@@ -53,11 +53,11 @@
   dependency on a hard version range, which overrides your "soft"
   declaration. Running `lein deps :tree` will identify which of your
   dependencies are responsible for the version range. You can add an
-  `:exclusions` clause to prevent that from affecting the rest of your
-  dependencies. See `lein help sample` for how exclusions work. You
-  may also want to report a bug with the dependency that uses hard
-  version ranges as they cause all kinds of problems and exhibit
-  unintuitive behaviour.
+  `:managed-dependencies` clause to prevent that from affecting the
+  rest of your dependencies. See [the managed dependencies
+  guide](doc/MANAGED_DEPS.md) for details. You may also want to report
+  a bug with the dependency that uses hard version ranges as they
+  cause all kinds of problems and exhibit unintuitive behaviour.
 
 **Q:** I have two dependencies, X and Y, which depends on Z. How is the version
   of Z decided?  
@@ -104,25 +104,12 @@
   [fireplace](https://github.com/tpope/vim-fireplace), for example.)
   Otherwise you can use the basic `lein repl`.
 
-**Q:** Version 2.8.0 seems a bit slower; why is that?  
-**A:** We have long used a hack of putting Leiningen on the JVM's
-  bootclasspath to speed up boot time, but the module system in Java 9
-  breaks this. We have switched to another method of speeding it up
-  (`-Xverify:none`) which gives anywhere from 95% to 70% of the same
-  speed boost depending on the machine on which you're running it. So
-  some users will notice a performance regression. We hope to go back
-  to the old method once Clojure 1.9.0 is released with a workaround,
-  but in the mean time if you are not using Java 9, you can go back to
-  the bootclasspath hack with this setting:
-
-    export LEIN_USE_BOOTCLASSPATH=y
-
 **Q:** Still too slow; what else can make startup faster?  
 **A:** The wiki has a page covering
   [ways to improve startup time](https://wiki.leiningen.org/Faster).
 
 **Q:** What if I care more about long-term performance than startup time?  
-**A:** Leiningen 2.1.0 onward get a speed boost by disabling optimized
+**A:** Leiningen gets a startup time speed boost by disabling optimized
   compilation (which only benefits long-running processes).  This can
   negatively affect performance in the long run, or lead to inaccurate
   benchmarking results.  If want the JVM to fully optimize, you can
@@ -177,10 +164,10 @@
   `"target/uberjar"` in the `:uberjar` profile as well.
 
 **Q:** Is there a way to use an uberjar without AOT?  
-**A:** As of Leiningen 2.4.0, if you omit `:main` in `project.clj`,
-  your uberjars will use `clojure.main` as their entry point. You can
-  launch with `java -jar my-app-standalone.jar -m my.entry.namespace
-  arg1 arg2 [...]` without any AOT, but it will take longer to launch.
+**A:** If you omit `:main` in `project.clj`, your uberjars will use
+  `clojure.main` as their entry point. You can launch with `java -jar
+  my-app-standalone.jar -m my.entry.namespace arg1 arg2 [...]` without
+  any AOT, but it will take longer to launch.
 
 **Q:** Why does `lein jar` package some namespaces from dependencies into my jar?  
 **A:** This is likely because you have AOT-compiled namespaces. An
@@ -204,15 +191,11 @@ You can also check things like `(System/getProperty
 "java.specification.version")` to use the JVM version or any other
 property.
 
-**Q:** What does `Received fatal alert: protocol_version` mean when
-  trying to access Clojars?  
-**A:** This usually means your JVM is not configured to use TLSv1.2, which is
-  used by Clojars' CDN. It's strongly recommended to upgrade to at least Java 8,
-  but if this is not feasible, you can fix it by exporting
-  `LEIN_JVM_OPTS=-Dhttps.protocols=TLSv1.2` as an environment variable.
-
 **Q:** I get a `java.security.KeyException` or `sun.security.provider.certpath.SunCertPathBuilderException` when running `lein`  
-**A:** The `java.security.KeyException` indicates an ssl error when trying to communicate with the HTTPS server via Java. This could be because you need to update the JDK, or some other package (e.g. with old versions of the nss package).
+**A:** The `java.security.KeyException` indicates an ssl error when
+  trying to communicate with the HTTPS server via Java. This could be
+  because you need to update the JDK, or some other package (e.g. with
+  old versions of the nss package).
 
 * On Fedora, you might just try running a `sudo yum update` to update all of your packages or `sudo yum update nss`.
 * On Debian/Ubuntu, `sudo update-ca-certificates -f` might help, or `sudo /var/lib/dpkg/info/ca-certificates-java.postinst configure`
@@ -239,35 +222,25 @@ happens it is strongly recommended to add an `:exclusion` and report a
 bug with the dependency which does this.
 
 **Q:** `lein`/`lein.bat` won't download `leiningen-x.y.z-SNAPSHOT.jar`  
-**A:** You probably downloaded `lein`/`lein.bat` from the [main branch](https://codeberg.org/leiningen/leiningen/src/main/bin). Unless you plan to build leiningen yourself or help develop it, we suggest you use the latest stable version: [lein](https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein)/[lein.bat](https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein.bat)
+
+**A:** You probably downloaded `lein`/`lein.bat` from the main
+  branch. Unless you plan to build leiningen yourself or help develop
+  it, we suggest you use the latest stable version:
+  [lein](https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein)/[lein.bat](https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein.bat)
 
 **Q:** I have a dependency whose group ID and/or artifact ID starts with a
 number (which is invalid for symbols in Clojure). How can I add it to my
 project's dependencies?  
-**A:** As of version 2.8.0, Leiningen supports string dependency names like
-this:
+**A:** Leiningen supports string dependency names like this:
 
 ```clj
 :dependencies [["net.3scale/3scale-api" "3.0.2"]]
 ```
 
-Prior to version 2.8.0, this is the workaround:
-
-```clj
-:dependencies [[~(symbol "net.3scale" "3scale-api") "3.0.2"]]
-```
-
 **Q:** I'm getting warnings for implicit hooks.  
 **A:** Hooks are a deprecated feature where plugins can modify the
-behavior of built-in Leiningen functionality; they result in
-situations which can be very difficult to debug and usually point
-to situations in which the original API is not flexible enough.
+  behavior of built-in Leiningen functionality; they result in
+  situations which can be very difficult to debug and usually point
+  to situations in which the original API is not flexible enough.
 
 Adding `:implicits false` to `project.clj` will disable all implicit features.
-
-**Q:** What causes "WARNING: An illegal reflective access operation has occurred"?  
-**A:** This is due to changes introduced in Java 9+. At the time of
-this writing, it's recommended to use Java 8 if possible. Otherwise
-you can [use workarounds](https://clojure.org/guides/faq#illegal_access)
-including adding `{:user {:jvm-opts ["--illegal-access=deny"]}}` to your
-`~/.lein/profile.clj`.

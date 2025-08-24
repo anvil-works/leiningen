@@ -1,21 +1,20 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 # Managed Dependencies With Leiningen
 
-Maven (and now Leiningen) provides a capability called "Dependency Management".
-The idea is to provide a way to specify a version number for common library
-dependencies in a single location, and re-use those version numbers from other
-discrete maven/lein projects.  This makes it easy to, e.g., update your `clj-time`
-dependency across a large number of projects without having to be mindful
-of every common dependency version across all of your libraries.
+Managed dependencies allow you to specify overrides for dependencies that you
+may encounter into your dependency tree, in order to ensure consistency.
 
-When using `:pedantic? :abort` in your projects, to ensure that you are producing
-a consistent and predictable build, it can be very cumbersome to play the 
-"dependency version whack-a-mole" game that arises whenever an upstream library 
-bumps a version of one of its dependencies.  `:managed-dependencies` can help 
-alleviate this issue by allowing you to keep the dependency version numbers 
-centralized.
+There are two main reasons you may want to do this. The main one is that your
+project's dependency tree might have some dependencies in it that are specified
+as ranges. Ranges are antithetical to repeatability. Today you might get one
+result from a range, and tomorrow after a new release happens, your result will
+change. This is absolutely unacceptable for a tool that strives to provide
+consistency, but the dependency resolving library we use unfortunately has this
+behavior anyway. Managed dependencies allow us to work around this design flaw
+by locking in a specific version in a way that will override whatever ranges
+you might encounter.
+
+The other reason managed dependencies are useful is that they allow you to lock
+in consistent dependency sets across several projects.
 
 ## `:managed-dependencies`
 
@@ -24,10 +23,11 @@ regular `:dependencies` section, with two exceptions:
 
 1. It does not actually introduce any dependencies to your project.  It only says,
   "hey leiningen, if you encounter one of these dependencies later, here are the
-  versions that you should fall back to if the version numbers aren't explicitly
-  specified."
+  versions that you should use instead of whatever is specified."
 2. It allows the version number to be omitted from the `:dependencies` section,
   for any artifact that you've listed in your `:managed-dependencies` section.
+  Directly declared versions in `:dependencies` will take precedence over
+  managed version numbers, but versions that are pulled in transitively will not.
 
 Here's an example:
 
@@ -47,12 +47,12 @@ In the example above, the final, resolved project will end up using the specifie
  on `ring/ring-codec` at all, since that is not mentioned in the "real" `:dependencies`
  section.
 
-This feature is not all that useful on its own, because in the example above,
-we're specifying the `:managed-dependencies` and `:dependencies` sections right
-alongside one another, and you could just as easily include the version numbers
-directly in the `:dependencies` section.  The feature becomes more powerful
-when your build workflow includes some other way of sharing the `:managed-dependencies`
-section across multiple projects.
+In the absence of ranges, this feature is not all that useful on its own,
+because in the example above, we're specifying the `:managed-dependencies` and
+`:dependencies` sections right alongside one another, and you could just as
+easily include the version numbers directly in the `:dependencies` section.
+The feature becomes more powerful when your build workflow includes some other
+way of sharing the `:managed-dependencies` section across multiple projects.
 
 ## A note on modifiers (`:exclusions`, `:classifier`, etc.)
 
@@ -132,12 +132,3 @@ that generated the value for a `:managed-dependencies` section dynamically.  Tha
 could provide other useful ways to take advantage of the `:managed-dependencies`
 functionality without needing to explicitly populate that section in all of your
 `project.clj` files.
-
-## Future integration
-
-It is likely that the functionality provided by the `lein-parent` plugin may integrated
-into the leiningen core in a future release; for now we have added only the `:managed-dependencies`
-functionality because it is necessary in order for the plugin to leverage it.  We
-will be experimenting with different ideas for implementation / API in plugins and
-making sure that we find an API that works well before submitting for inclusion
-into core leiningen.

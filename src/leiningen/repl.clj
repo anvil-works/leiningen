@@ -288,6 +288,7 @@
   {:dependencies
    '[^:displace [reply "0.5.1" :exclusions [org.clojure/clojure ring/ring-core]]
      ^:displace [net.cgrand/parsley "0.9.3" :exclusions [org.clojure/clojure]]
+     [org.clojure/clojure "1.12.0"]
      [org.nrepl/incomplete "0.1.0"]]})
 
 (defn- trampoline-repl [project port]

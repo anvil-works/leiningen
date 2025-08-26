@@ -291,9 +291,9 @@
      [org.clojure/clojure "1.12.0"]
      [org.nrepl/incomplete "0.1.0"]
      [commons-io "2.17.0"]
-     [com.fasterxml/jackson-core "2.18.0"]
-     [com.fasterxml/jackson-dataformat-cbor "2.18.0"]
-     [com.fasterxml/jackson-dataformat-smile "2.18.0"]]})
+     [com.fasterxml.jackson.core/jackson-core "2.18.0"]
+     [com.fasterxml.jackson.dataformat/jackson-dataformat-cbor "2.18.0"]
+     [com.fasterxml.jackson.dataformat/jackson-dataformat-smile "2.18.0"]]})
 
 (defn- trampoline-repl [project port]
   (let [init-option (get-in project [:repl-options :init])

@@ -270,4 +270,5 @@
                 (with-system-err-str
                   (is (thrown-with-msg? Exception #"Signatures did not validate."
                         (deps project ":verify" allowed-signers)))))]
-      (is (re-find #":verified.*test-project" out)))))
+      (is (re-find #":unsigned.*org.clojure" out))
+      (is (re-find #":signed.*test-project" out)))))

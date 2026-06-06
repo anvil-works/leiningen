@@ -56,7 +56,7 @@
 (defn- check-gpg-signature [_ signature]
   (let [{:keys [err exit]} (user/gpg "--verify" "--" (str signature))]
     (if (zero? exit)
-      :signed ; TODO distinguish between signed and trusted
+      :signed ; TODO distinguish between signed and trusted?
       (fetch-key signature err))))
 
 (defn- get-signature [project dep extension]
@@ -74,9 +74,13 @@
 
 (defn- verify [project ok? extension check-signature dep]
   (let [signature (get-signature project dep (str "jar" extension))
-        status (if signature
-                 (check-signature dep signature)
-                 :unsigned)]
+        pom-signature (get-signature project dep (str "pom" extension))
+        status (if (or (not signature) (not pom-signature))
+                 :unsigned
+                 (let [status (check-signature dep signature)]
+                   (if (= :signed status)
+                     (check-signature dep pom-signature)
+                     status)))]
     (when (not= :signed status)
       (reset! ok? false))
     (println status (pr-str dep))))
@@ -90,12 +94,12 @@
              "-f" allowed-signers "-I" id "-s" (str signature)]
         proc (.exec (Runtime/getRuntime) (into-array String cmd))]
     (with-open [i (.getOutputStream proc)]
-      (io/copy (io/file (str/replace signature ".jar.sig" ".jar")) i))
+      (io/copy (io/file (str/replace signature ".sig" "")) i))
     (when main/*debug*
       (with-open [o (.getInputStream proc)] (io/copy o System/out))
       (with-open [e (.getErrorStream proc)] (io/copy e System/out)))
     (if (zero? (.waitFor proc))
-      :verified
+      :signed
       :unverified)))
 
 (defn- verify-ssh [project ok? allowed-signers dep _depth]

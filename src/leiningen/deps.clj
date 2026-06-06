@@ -73,12 +73,13 @@
               (first))
          (catch DependencyResolutionException _))))
 
-(defn- verify-gpg [project dep _]
+(defn- verify-gpg [project ok? dep _]
   (let [signature (get-signature project dep ".asc")
         status (if signature
                  (check-signature signature)
                  :unsigned)]
-    ;; TODO: support successful exit code only on fully-signed deps
+    (when (not= :signed status)
+      (reset! ok? false))
     (println status (pr-str dep))))
 
 (defn- check-ssh-signature [[dep-id] signature allowed-signers]
@@ -95,17 +96,21 @@
       :verified
       :unverified)))
 
-(defn- verify-ssh [project allowed-signers dep _depth]
+(defn- verify-ssh [project ok? allowed-signers dep _depth]
   (let [status (if-let [signature (get-signature project dep ".sig")]
                  (check-ssh-signature dep signature allowed-signers)
                  :unsigned)]
-    ;; TODO: support successful exit code only on fully-signed deps
+    (when (not= :verified status)
+      (reset! ok? false))
     (println status (pr-str dep))))
 
 (defn ^:internal verify-ssh-signatures [project allowed-signers]
-  (walk-deps (classpath/managed-dependency-hierarchy
-              :dependencies :managed-dependencies project)
-             (partial verify-ssh project allowed-signers)))
+  (let [ok? (atom true)]
+    (walk-deps (classpath/managed-dependency-hierarchy
+                :dependencies :managed-dependencies project)
+               (partial verify-ssh project ok? allowed-signers))
+    (when-not @ok?
+      (main/abort "Signatures did not validate."))))
 
 
 
@@ -216,9 +221,12 @@ force them to be updated, use `lein -U $TASK`."
                                              *print-level* 10000]
                                      (pprint/pprint hierarchy))))
            (= command ":verify")
-           (walk-deps (classpath/managed-dependency-hierarchy
-                       :dependencies :managed-dependencies project)
-                      (partial verify-gpg project))
+           (let [ok? (atom true)]
+             (walk-deps (classpath/managed-dependency-hierarchy
+                         :dependencies :managed-dependencies project)
+                        (partial verify-gpg project ok?))
+             (when-not @ok?
+               (main/abort "Signatures did not validate.")))
            (empty? command) (classpath/resolve-managed-dependencies
                              :dependencies :managed-dependencies project)
            :else (main/abort "Unknown deps command" command))

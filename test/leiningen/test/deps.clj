@@ -238,29 +238,36 @@
     (deps (project/set-profiles managed-deps-project [:replace-deps]))))
 
 (deftest ^:online test-verify
-  (let [project (-> sample-project
-                    (update :repositories (fn [repos]
-                                            (remove #(= "other" (first %)) repos)))
-                    (assoc :dependencies '[[org.clojure/clojure "1.10.3"]
-                                           [rome "0.9"]
-                                           [ring "1.0.0"]])
-                    (assoc :key-server "hkps://keyserver.ubuntu.com")
-                    (assoc :checksum :ignore))
-        _ (deps project)
-        out (with-out-str
-              (with-system-err-str
-                (deps project ":verify")))]
-    (doseq [[dep signed] '{[org.clojure/clojure "1.10.3"] :signed
-                           [rome "0.9"] :unsigned
-                           [jdom "1.0"] :unsigned}]
-      (is (.contains out (pr-str signed dep))
-          (str "missing " dep)))))
+  (binding [main/*exit-process?* false]
+    (let [project (-> sample-project
+                      (update :repositories (fn [repos]
+                                              (remove #(= "other" (first %))
+                                                      repos)))
+                      (assoc :dependencies '[[org.clojure/clojure "1.10.3"]
+                                             [rome "0.9"]
+                                             [ring "1.0.0"]])
+                      (assoc :key-server "hkps://keyserver.ubuntu.com")
+                      (assoc :checksum :ignore))
+          _ (deps project)
+          out (with-out-str
+                (with-system-err-str
+                  (is (thrown-with-msg? Exception #"Signatures did not validate."
+                        (deps project ":verify")))))]
+      (doseq [[dep signed] '{[org.clojure/clojure "1.10.3"] :signed
+                             [rome "0.9"] :unsigned
+                             [jdom "1.0"] :unsigned}]
+        (is (.contains out (pr-str signed dep))
+            (str "missing " dep))))))
 
 (deftest ^:online test-verify-ssh
-  (let [project (assoc sample-project
-                       :dependencies
-                       '[[org.clojars.technomancy/test-project "0.1.2"]])
-        allowed-signers "leiningen-core/dev-resources/allowed_signers"
-        out (with-out-str
-              (deps project ":verify" allowed-signers))]
-    (println out)))
+  (binding [main/*exit-process?* false]
+    (let [project (assoc sample-project
+                         :dependencies
+                         '[[org.clojars.technomancy/test-project "0.1.2"]])
+          allowed-signers "leiningen-core/dev-resources/allowed_signers"
+          ;; TODO: with-out-str here fails to catch the abort println
+          out (with-out-str
+                (with-system-err-str
+                  (is (thrown-with-msg? Exception #"Signatures did not validate."
+                        (deps project ":verify" allowed-signers)))))]
+      (is (re-find #":verified.*test-project" out)))))

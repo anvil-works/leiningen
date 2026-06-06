@@ -399,7 +399,7 @@ del "%TRAMPOLINE_FILE%" >nul 2>&1
 
 set ERRORLEVEL=
 set RC=0
-"%LEIN_JAVA_CMD%" --enable-native-access %LEIN_JVM_OPTS% ^
+"%LEIN_JAVA_CMD%" --enable-native-access=ALL-UNNAMED %LEIN_JVM_OPTS% ^
  -Dfile.encoding=UTF-8 ^
  -Dclojure.compile.path="%DIR_CONTAINING%/target/classes" ^
  -Dleiningen.original.pwd="%ORIGINAL_PWD%" ^

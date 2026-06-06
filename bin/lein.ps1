@@ -133,7 +133,7 @@ function Invoke-Java
     $env:LEIN_JAVA_CMD = if($env:LEIN_JAVA_CMD){$env:LEIN_JAVA_CMD -replace '\A"|"\Z',''}else{$env:JAVA_CMD}
     if(!$env:JVM_OPTS){$env:JVM_OPTS = $env:JAVA_OPTS}
     $JavaArgs = @(
-        '-client',$env:LEIN_JVM_OPTS,
+        '--enable-native-access',$env:LEIN_JVM_OPTS,
         '-Dfile.encoding=UTF-8',
         "`"-Dclojure.compile.path=$PWD/target/classes`"", #TODO: Add this line only when we're initializing from source
         "`"-Dleiningen.original.pwd=$env:ORIGINAL_PWD`"",

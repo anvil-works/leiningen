@@ -255,3 +255,12 @@
                            [jdom "1.0"] :unsigned}]
       (is (.contains out (pr-str signed dep))
           (str "missing " dep)))))
+
+(deftest ^:online test-verify-ssh
+  (let [project (assoc sample-project
+                       :dependencies
+                       '[[org.clojars.technomancy/test-project "0.1.2"]])
+        allowed-signers "leiningen-core/dev-resources/allowed_signers"
+        out (with-out-str
+              (deps project ":verify" allowed-signers))]
+    (println out)))

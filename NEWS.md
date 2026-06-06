@@ -6,6 +6,7 @@ Please update your git remotes to point to Codeberg; the Github
 repository is deprecated. Downloads will still be hosted there, but
 the Codeberg git repository is now canonical.
 
+* Verify SSH signatures with `lein deps :verify allowed-signers`. (Phil Hagelberg)
 * Avoid native access warnings on Windows. (Phil Hagelberg)
 * Ensure synthetic jar entries have timestamps matching `project.clj` file. (Phil Hagelberg)
 * Support `SOURCE_DATE_EPOCH` environment variable. (Phil Hagelberg)

@@ -1,10 +1,12 @@
 (ns leiningen.deps
   "Download and examine dependencies."
-  (:require [leiningen.core.classpath :as classpath]
+  (:require [clojure.java.io :as io]
+            [clojure.pprint :as pprint]
+            [clojure.string :as str]
+            [leiningen.core.classpath :as classpath]
             [leiningen.core.main :as main]
             [leiningen.core.project :as project]
             [leiningen.core.user :as user]
-            [clojure.pprint :as pprint]
             [leiningen.core.utils :as utils]
             [cemerick.pomegranate.aether :as aether])
   (:import (org.eclipse.aether.resolution DependencyResolutionException)))
@@ -57,27 +59,54 @@
       :signed ; TODO distinguish between signed and trusted
       (fetch-key signature err))))
 
-(defn- get-signature [project dep]
+(defn- get-signature [project dep extension]
   (let [dep-map (assoc (apply hash-map (drop 2 dep))
                        ;; TODO: check pom signature too
-                       :extension "jar.asc")
+                       :extension (str "jar" extension))
         dep (into (vec (take 2 dep)) (apply concat dep-map))]
     (try (->> (apply aether/resolve-dependencies
                      (apply concat
                             (assoc (classpath/default-aether-args project)
                                    :coordinates [dep])))
               (aether/dependency-files)
-              (filter #(.endsWith (.getName %) ".asc"))
+              (filter #(.endsWith (.getName %) extension))
               (first))
          (catch DependencyResolutionException _))))
 
-(defn- verify [project dep _]
-  (let [signature (get-signature project dep)
+(defn- verify-gpg [project dep _]
+  (let [signature (get-signature project dep ".asc")
         status (if signature
                  (check-signature signature)
                  :unsigned)]
     ;; TODO: support successful exit code only on fully-signed deps
     (println status (pr-str dep))))
+
+(defn- check-ssh-signature [[dep-id] signature allowed-signers]
+  (let [id (str (project/group-id dep-id) "/" (project/artifact-id dep-id))
+        cmd ["ssh-keygen" "-Y" "verify" "-n" "file"
+             "-f" allowed-signers "-I" id "-s" (str signature)]
+        proc (.exec (Runtime/getRuntime) (into-array String cmd))]
+    (with-open [i (.getOutputStream proc)]
+      (io/copy (io/file (str/replace signature ".jar.sig" ".jar")) i))
+    (when main/*debug*
+      (with-open [o (.getInputStream proc)] (io/copy o System/out))
+      (with-open [e (.getErrorStream proc)] (io/copy e System/out)))
+    (if (zero? (.waitFor proc))
+      :verified
+      :unverified)))
+
+(defn- verify-ssh [project allowed-signers dep _depth]
+  (let [status (if-let [signature (get-signature project dep ".sig")]
+                 (check-ssh-signature dep signature allowed-signers)
+                 :unsigned)]
+    ;; TODO: support successful exit code only on fully-signed deps
+    (println status (pr-str dep))))
+
+(defn ^:internal verify-ssh-signatures [project allowed-signers]
+  (walk-deps (classpath/managed-dependency-hierarchy
+              :dependencies :managed-dependencies project)
+             (partial verify-ssh project allowed-signers)))
+
 
 
 (def tree-command
@@ -131,7 +160,14 @@ but in EDN format.
 
     lein deps :verify
 
-Check signatures of each dependency. ALPHA: subject to change.
+Check GPG signatures of each dependency. ALPHA: subject to change.
+
+    lein deps :verify allowed-signers
+
+Check SSH signatures of each dependency using provided allowed-signers file.
+See ssh-keygen manual for more about allowed-signers. The princials field for
+each dependency checked should be the group-id/artifact-id. ALPHA: subject
+to change.
 
     lein deps :implicits
 
@@ -180,14 +216,9 @@ force them to be updated, use `lein -U $TASK`."
                                              *print-level* 10000]
                                      (pprint/pprint hierarchy))))
            (= command ":verify")
-           (if (user/gpg-available?)
-             (walk-deps (classpath/managed-dependency-hierarchy
-                         :dependencies
-                         :managed-dependencies
-                         project)
-                        (partial verify project))
-             (main/abort (str "Could not verify - gpg not available.\n"
-                              "See `lein help gpg` for how to setup gpg.")))
+           (walk-deps (classpath/managed-dependency-hierarchy
+                       :dependencies :managed-dependencies project)
+                      (partial verify-gpg project))
            (empty? command) (classpath/resolve-managed-dependencies
                              :dependencies :managed-dependencies project)
            :else (main/abort "Unknown deps command" command))
@@ -196,6 +227,8 @@ force them to be updated, use `lein -U $TASK`."
   ([project command target]
    (cond (= command ":query")
          (deps project command target "RELEASE")
+         (= command ":verify")
+         (verify-ssh-signatures project target)
          (re-find #"^:why+$" command)
          (why-deps (classpath/managed-dependency-hierarchy :dependencies
                                                            :managed-dependencies

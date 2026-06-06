@@ -53,7 +53,7 @@
         :no-key))
     :bad-signature))
 
-(defn- check-signature [signature]
+(defn- check-gpg-signature [_ signature]
   (let [{:keys [err exit]} (user/gpg "--verify" "--" (str signature))]
     (if (zero? exit)
       :signed ; TODO distinguish between signed and trusted
@@ -61,8 +61,7 @@
 
 (defn- get-signature [project dep extension]
   (let [dep-map (assoc (apply hash-map (drop 2 dep))
-                       ;; TODO: check pom signature too
-                       :extension (str "jar" extension))
+                       :extension extension)
         dep (into (vec (take 2 dep)) (apply concat dep-map))]
     (try (->> (apply aether/resolve-dependencies
                      (apply concat
@@ -73,16 +72,19 @@
               (first))
          (catch DependencyResolutionException _))))
 
-(defn- verify-gpg [project ok? dep _]
-  (let [signature (get-signature project dep ".asc")
+(defn- verify [project ok? extension check-signature dep]
+  (let [signature (get-signature project dep (str "jar" extension))
         status (if signature
-                 (check-signature signature)
+                 (check-signature dep signature)
                  :unsigned)]
     (when (not= :signed status)
       (reset! ok? false))
     (println status (pr-str dep))))
 
-(defn- check-ssh-signature [[dep-id] signature allowed-signers]
+(defn- verify-gpg [project ok? dep _]
+  (verify project ok? ".asc" check-gpg-signature dep))
+
+(defn- check-ssh-signature [allowed-signers [dep-id] signature]
   (let [id (str (project/group-id dep-id) "/" (project/artifact-id dep-id))
         cmd ["ssh-keygen" "-Y" "verify" "-n" "file"
              "-f" allowed-signers "-I" id "-s" (str signature)]
@@ -97,12 +99,7 @@
       :unverified)))
 
 (defn- verify-ssh [project ok? allowed-signers dep _depth]
-  (let [status (if-let [signature (get-signature project dep ".sig")]
-                 (check-ssh-signature dep signature allowed-signers)
-                 :unsigned)]
-    (when (not= :verified status)
-      (reset! ok? false))
-    (println status (pr-str dep))))
+  (verify project ok? ".sig" (partial check-ssh-signature allowed-signers) dep))
 
 (defn ^:internal verify-ssh-signatures [project allowed-signers]
   (let [ok? (atom true)]

@@ -238,7 +238,8 @@
     (deps (project/set-profiles managed-deps-project [:replace-deps]))))
 
 (deftest ^:online test-verify
-  (binding [main/*exit-process?* false]
+  (binding [main/*exit-process?* false
+            *err* (PrintWriter-on (constantly nil) (constantly nil))]
     (let [project (-> sample-project
                       (update :repositories (fn [repos]
                                               (remove #(= "other" (first %))
@@ -260,15 +261,14 @@
             (str "missing " dep))))))
 
 (deftest ^:online test-verify-ssh
-  (binding [main/*exit-process?* false]
+  (binding [main/*exit-process?* false
+            *err* (PrintWriter-on (constantly nil) (constantly nil))]
     (let [project (assoc sample-project
                          :dependencies
                          '[[org.clojars.technomancy/test-project "0.1.2"]])
           allowed-signers "leiningen-core/dev-resources/allowed_signers"
-          ;; TODO: with-out-str here fails to catch the abort println
           out (with-out-str
-                (with-system-err-str
-                  (is (thrown-with-msg? Exception #"Signatures did not validate."
-                        (deps project ":verify" allowed-signers)))))]
+                (is (thrown-with-msg? Exception #"Signatures did not validate."
+                      (deps project ":verify" allowed-signers))))]
       (is (re-find #":unsigned.*org.clojure" out))
       (is (re-find #":signed.*test-project" out)))))

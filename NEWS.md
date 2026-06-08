@@ -1,6 +1,6 @@
 # Leiningen News -- history of user-visible changes
 
-## 2.13.0 / ???
+## 2.13.0 / 2026-06-08
 
 Please update your git remotes to point to Codeberg; the Github
 repository is deprecated. Downloads will still be hosted there, but

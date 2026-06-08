@@ -1,4 +1,4 @@
-(defproject leiningen-core "2.12.1-SNAPSHOT"
+(defproject leiningen-core "2.13.0-SNAPSHOT"
   :url "https://codeberg.org/leiningen/leiningen"
   :license {:name "Eclipse Public License"
             :url "https://www.eclipse.org/legal/epl-v10.html"}

@@ -286,8 +286,12 @@
 
 (def reply-profile
   {:dependencies
-   '[^:displace [reply "0.5.1" :exclusions [org.clojure/clojure ring/ring-core]]
+    ;; ANVIL: Remove drawbridge from REPLy, since we don't connect over HTTP.
+    ;; This means fewer CVE-prone dependencies to keep up to date.
+   '[^:displace [reply "0.5.1" :exclusions [org.clojure/clojure ring/ring-core
+                                            nrepl/drawbridge]]
      ^:displace [net.cgrand/parsley "0.9.3" :exclusions [org.clojure/clojure]]
+     ;; ANVIL: Update Clojure to fix CVEs
      [org.clojure/clojure "1.12.0"]
      [org.nrepl/incomplete "0.1.0"]]})
 
